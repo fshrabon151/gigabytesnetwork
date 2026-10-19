@@ -71,10 +71,22 @@ const output = await minify(obfuscatedSource, {
 await mkdir(outputDir, { recursive: true });
 await writeFile(outputPath, `${output}\n`, 'utf8');
 
-for (const staticFile of ['robots.txt', 'sitemap.xml', 'CNAME']) {
+const staticFiles = [
+  'robots.txt',
+  'sitemap.xml',
+  'CNAME',
+  'og-image.png',
+  'favicon.svg',
+  'favicon.png',
+  'favicon.ico',
+  'apple-touch-icon.png',
+  'site.webmanifest'
+];
+
+for (const staticFile of staticFiles) {
   try {
     await copyFile(new URL(`./${staticFile}`, import.meta.url), new URL(`./dist/${staticFile}`, import.meta.url));
   } catch {}
 }
 
-console.log('Production site created at dist/index.html (with robots.txt, sitemap.xml, CNAME, and minified JS)');
+console.log('Production site created at dist/index.html (with all metadata, favicons, og-image, and assets)');

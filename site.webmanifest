@@ -1,0 +1,26 @@
+{
+  "name": "Gigabytes Network",
+  "short_name": "Gigabytes",
+  "description": "Gigabytes Network: super fast internet service provider with Home, Business and Safe Internet.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#02050f",
+  "theme_color": "#02050f",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
