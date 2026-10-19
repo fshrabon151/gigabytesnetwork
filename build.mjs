@@ -1,4 +1,4 @@
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, copyFile } from 'node:fs/promises';
 import { minify } from 'html-minifier-terser';
 import { minify as minifyJavaScript } from 'terser';
 
@@ -16,17 +16,37 @@ for (const match of source.matchAll(scriptPattern)) {
   const start = match.index;
   obfuscatedSource += source.slice(lastIndex, start);
 
+  const typeMatch = attributes.match(/\btype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+  const scriptType = (typeMatch ? (typeMatch[1] ?? typeMatch[2] ?? typeMatch[3]) : '').trim().toLowerCase();
+  const isExecutableJs = !scriptType || [
+    'text/javascript',
+    'application/javascript',
+    'text/ecmascript',
+    'application/ecmascript',
+    'module'
+  ].includes(scriptType);
+
   if (!code.trim() || /\bsrc\s*=/i.test(attributes)) {
     obfuscatedSource += tag;
-  } else {
+  } else if (scriptType === 'application/ld+json' || scriptType === 'application/json') {
+    try {
+      const minifiedJson = JSON.stringify(JSON.parse(code));
+      obfuscatedSource += `<script${attributes}>${minifiedJson}</script>`;
+    } catch {
+      obfuscatedSource += tag;
+    }
+  } else if (isExecutableJs) {
     const result = await minifyJavaScript(code, {
       compress: true,
       mangle: true,
+      module: scriptType === 'module',
       format: { comments: false }
     });
 
     if (!result.code) throw new Error('Terser produced no JavaScript output.');
     obfuscatedSource += `<script${attributes}>${result.code}</script>`;
+  } else {
+    obfuscatedSource += tag;
   }
 
   lastIndex = start + tag.length;
@@ -50,4 +70,11 @@ const output = await minify(obfuscatedSource, {
 
 await mkdir(outputDir, { recursive: true });
 await writeFile(outputPath, `${output}\n`, 'utf8');
-console.log('Production site created at dist/index.html (inline JavaScript minified with Terser)');
+
+for (const staticFile of ['robots.txt', 'sitemap.xml']) {
+  try {
+    await copyFile(new URL(`./${staticFile}`, import.meta.url), new URL(`./dist/${staticFile}`, import.meta.url));
+  } catch {}
+}
+
+console.log('Production site created at dist/index.html (with robots.txt, sitemap.xml, and minified JS)');
